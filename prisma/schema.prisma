@@ -1,0 +1,78 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id         String       @id @default(uuid())
+  name       String?
+  email      String       @unique
+  password   String
+  role       String       @default("user")
+  createdAt  DateTime     @default(now())
+  submissions Submission[]
+  progress   Progress[]
+}
+
+model Topic {
+  id        String    @id @default(uuid())
+  title     String
+  slug      String    @unique
+  order     Int       @default(0)
+  problems  Problem[]
+}
+
+model Problem {
+  id          String       @id @default(uuid())
+  title       String
+  slug        String       @unique
+  statement   String
+  difficulty  String       @default("easy")
+  topic       Topic        @relation(fields: [topicId], references: [id])
+  topicId     String
+  testcases   Testcase[]
+  submissions Submission[]
+  progress    Progress[]   
+  createdAt   DateTime     @default(now())
+}
+
+model Testcase {
+  id         String    @id @default(uuid())
+  problem    Problem   @relation(fields: [problemId], references: [id])
+  problemId  String
+  input      String
+  output     String
+  isSample   Boolean   @default(false)
+  timeoutMs  Int       @default(2000)
+}
+
+model Submission {
+  id         String    @id @default(uuid())
+  user       User      @relation(fields: [userId], references: [id])
+  userId     String
+  problem    Problem   @relation(fields: [problemId], references: [id])
+  problemId  String
+  language   String
+  code       String    @db.Text
+  status     String
+  runtimeMs  Int?
+  memoryKb   Int?
+  createdAt  DateTime  @default(now())
+}
+
+model Progress {
+  id        String   @id @default(uuid())
+  userId    String
+  problemId String
+  solvedAt  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  problem Problem @relation(fields: [problemId], references: [id])
+
+  @@unique([userId, problemId])
+}
+
